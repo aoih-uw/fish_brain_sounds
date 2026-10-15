@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#111315;font-family:'Space Grotesk',Helvetica,sans-serif;overflow:hidden;}
+a{color:#85b6b2;}a:hover{color:#e49444;}
+button{font:inherit;}
+</style>
+</helmet>
+<div style="height:100dvh;display:grid;grid-template-columns:{{ L.rootCols }};grid-template-rows:{{ L.rootRows }};background:#111315;color:#e8e6e1;">
+  <div style="display:flex;flex-direction:column;justify-content:space-between;padding:{{ L.sidePad }};gap:{{ L.sideGap }};border-right:{{ L.sideBR }};border-bottom:{{ L.sideBB }};overflow-y:auto;box-sizing:border-box;">
+    <div style="display:flex;flex-direction:column;gap:{{ L.groupsGap }};">
+      <div style="display:flex;flex-direction:{{ L.groupDir }};gap:{{ L.itemGap }};">
+        <div style="display:{{ L.labelDisp }};font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0.14em;color:#8a8d91;margin-bottom:8px;">VIEW</div>
+        <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="2">
+          <button onClick="{{ tb.select }}" style="flex:{{ tb.flex }};display:flex;align-items:center;justify-content:{{ tb.justify }};padding:{{ tb.pad }};border-radius:10px;border:1px solid {{ tb.border }};background:{{ tb.bg }};color:{{ tb.fg }};cursor:pointer;text-align:left;font-size:{{ tb.size }};font-weight:500;white-space:nowrap;">{{ tb.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:{{ L.freqDisp }};flex-direction:{{ L.groupDir }};gap:{{ L.itemGap }};">
+        <div style="display:{{ L.labelDisp }};font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0.14em;color:#8a8d91;margin-bottom:8px;">STIMULUS</div>
+        <sc-for list="{{ freqs }}" as="f" hint-placeholder-count="3">
+          <button onClick="{{ f.select }}" style="flex:{{ f.flex }};display:flex;align-items:baseline;justify-content:{{ f.justify }};gap:6px;padding:{{ f.pad }};border-radius:10px;border:1px solid {{ f.border }};background:{{ f.bg }};color:{{ f.fg }};cursor:pointer;text-align:left;">
+            <span style="font-size:{{ f.size }};font-weight:500;letter-spacing:-0.02em;">{{ f.hz }}</span>
+            <span style="font-family:'Inter',sans-serif;font-size:14px;">Hz</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:{{ L.timeDisp }};flex-direction:column;gap:12px;">
+      <div ref="{{ refTime }}" style="font-family:'Inter',sans-serif;font-size:14px;color:#8a8d91;text-align:center;font-variant-numeric:tabular-nums;">00:00.00</div>
+    </div>
+  </div>
+  <div style="position:relative;min-height:0;min-width:0;">
+  <div style="position:absolute;inset:0;display:{{ sigDisplay }};grid-template-rows:1fr 1fr;gap:1px;background:#24272b;">
+    <div style="display:grid;grid-template-columns:{{ L.rowCols }};grid-template-rows:{{ L.rowRows }};gap:1px;min-height:0;">
+      <div style="position:relative;background:#111315;min-height:0;">
+        <canvas ref="{{ refH }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+        <div style="position:absolute;top:{{ L.hdrTop }};left:{{ L.hdrSide }};right:{{ L.hdrSide }};display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;pointer-events:none;min-width:0;">
+            <div role="img" aria-label="speaker" style="flex:none;width:{{ L.iconSize }};height:{{ L.iconSize }};background:#85b6b2;-webkit-mask:url(uploads/speaker-filled-audio-tool.png) center/contain no-repeat;mask:url(uploads/speaker-filled-audio-tool.png) center/contain no-repeat;"></div>
+            <span style="font-size:{{ L.titleSize }};font-weight:600;color:#85b6b2;white-space:nowrap;">Underwater speaker signal</span>
+          </div>
+          <button onClick="{{ toggleH }}" style="flex:none;display:flex;align-items:center;gap:8px;height:{{ L.btnH }};padding:{{ L.btnPad }};border-radius:99px;border:1px solid #85b6b2;background:{{ hBg }};color:{{ hFg }};cursor:pointer;font-size:14px;font-weight:600;letter-spacing:0.08em;white-space:nowrap;"><span>{{ hIcon }}</span><span>{{ hLabel }}</span></button>
+        </div>
+      </div>
+      <div style="position:relative;background:#111315;min-height:0;">
+        <canvas ref="{{ refSH }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+        <div style="position:absolute;top:{{ L.specLabTop }};left:{{ L.hdrSide }};font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0.14em;color:#8a8d91;pointer-events:none;">SPECTRUM</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:{{ L.rowCols }};grid-template-rows:{{ L.rowRows }};gap:1px;min-height:0;">
+      <div style="position:relative;background:#111315;min-height:0;">
+        <canvas ref="{{ refE }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+        <div style="position:absolute;top:{{ L.hdrTop }};left:{{ L.hdrSide }};right:{{ L.hdrSide }};display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;pointer-events:none;min-width:0;">
+            <div role="img" aria-label="fish brain" style="flex:none;width:{{ L.iconSize }};height:{{ L.iconSize }};background:#e49444;-webkit-mask:url(uploads/fish.png) center/contain no-repeat;mask:url(uploads/fish.png) center/contain no-repeat;"></div>
+            <span style="font-size:{{ L.titleSize }};font-weight:600;color:#e49444;white-space:nowrap;">Fish neural signal</span>
+          </div>
+          <button onClick="{{ toggleE }}" style="flex:none;display:flex;align-items:center;gap:8px;height:{{ L.btnH }};padding:{{ L.btnPad }};border-radius:99px;border:1px solid #e49444;background:{{ eBg }};color:{{ eFg }};cursor:pointer;font-size:14px;font-weight:600;letter-spacing:0.08em;white-space:nowrap;"><span>{{ eIcon }}</span><span>{{ eLabel }}</span></button>
+        </div>
+      </div>
+      <div style="position:relative;background:#111315;min-height:0;">
+        <canvas ref="{{ refSE }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;inset:0;display:{{ aepDisplay }};flex-direction:column;align-items:center;justify-content:{{ L.aepJustify }};gap:{{ L.aepGap }};padding:{{ L.aepPad }};box-sizing:border-box;overflow-y:{{ L.aepOverflow }};">
+    <h1 style="margin:0;max-width:1400px;width:100%;text-wrap:pretty;font-family:'Space Grotesk',sans-serif;font-size:{{ L.h1Size }};font-weight:600;line-height:1.2;color:#e8e6e1;">I measure the <span style="color:#e49444;">neural activity</span> of fish while they listen to <span style="color:#85b6b2;">sounds</span>.</h1>
+    <div style="width:100%;max-width:1400px;aspect-ratio:2.12;min-height:0;flex:{{ L.cardFlex }};overflow:hidden;background:#ffffff;border-radius:14px;padding:{{ L.cardPad }};box-sizing:border-box;display:flex;">
+      <img src="uploads/aepdiagram_edited.png" alt="Auditory Evoked Potentials (AEP): present sound stimulus, record elicited response from electrodes, measure AEP" style="display:block;width:100%;min-width:0;min-height:0;object-fit:contain;">
+    </div>
+    <p style="margin:0;max-width:1400px;width:100%;font-family:'Space Grotesk',sans-serif;font-size:{{ L.pSize }};font-weight:600;line-height:1.2;color:#e8e6e1;text-wrap:pretty;">I have "sonified" these neural signals. Click on the signals tab to listen...</p>
+  </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;idleSeconds&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:60,&quot;min&quot;:10,&quot;max&quot;:600,&quot;step&quot;:10,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;traceMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;reveal&quot;,&quot;scroll&quot;],&quot;default&quot;:&quot;scroll&quot;,&quot;tsType&quot;:&quot;'reveal' | 'scroll'&quot;,&quot;section&quot;:&quot;Trace&quot;},&quot;windowMs&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1500,&quot;min&quot;:100,&quot;max&quot;:6000,&quot;step&quot;:100,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Trace (scroll mode)&quot;},&quot;playheadPos&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.85,&quot;min&quot;:0.5,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Trace (scroll mode)&quot;},&quot;vZoom&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0.3,&quot;max&quot;:3,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Trace&quot;},&quot;mutedOpacity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.35,&quot;min&quot;:0,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Trace&quot;},&quot;showGrid&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Trace&quot;},&quot;fMin&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:20,&quot;min&quot;:5,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;Hz&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Frequency axis&quot;},&quot;fMax&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:2000,&quot;min&quot;:500,&quot;max&quot;:10000,&quot;step&quot;:100,&quot;unit&quot;:&quot;Hz&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Frequency axis&quot;}}">
+const FFT_N = 8192, DB_FLOOR = -90, HARM = '#e7ca60';
+const BG = '#111315';
+
+function makeFFT(N) {
+  const bits = Math.log2(N), rev = new Uint32Array(N);
+  for (let i = 0; i < N; i++) { let r = 0, x = i; for (let b = 0; b < bits; b++) { r = (r << 1) | (x & 1); x >>= 1; } rev[i] = r; }
+  const cos = new Float64Array(N / 2), sin = new Float64Array(N / 2), win = new Float64Array(N);
+  for (let i = 0; i < N / 2; i++) { cos[i] = Math.cos(-2 * Math.PI * i / N); sin[i] = Math.sin(-2 * Math.PI * i / N); }
+  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+  const re = new Float64Array(N), im = new Float64Array(N), mag = new Float32Array(N / 2);
+  // fill(i) returns the raw sample for window position i; returns magnitude array (shared)
+  return function (fill) {
+    for (let i = 0; i < N; i++) { re[rev[i]] = fill(i) * win[i]; im[rev[i]] = 0; }
+    for (let size = 2; size <= N; size <<= 1) {
+      const half = size >> 1, step = N / size;
+      for (let s = 0; s < N; s += size) for (let j = 0; j < half; j++) {
+        const k = j * step, a = s + j, b = a + half;
+        const tr = re[b] * cos[k] - im[b] * sin[k], ti = re[b] * sin[k] + im[b] * cos[k];
+        re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+      }
+    }
+    for (let i = 0; i < N / 2; i++) mag[i] = Math.hypot(re[i], im[i]);
+    return mag;
+  };
+}
+function hexRgb(h) { return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
+
+class Component extends DCLogic {
+  state = { freq: 55, eOn: false, hOn: false, tab: 'aep', narrow: typeof window !== 'undefined' && window.innerWidth < 760 };
+  constructor(p) {
+    super(p);
+    this.canvases = {}; this.buffers = {}; this.peaks = {}; this.smooth = {};
+    this.offset = 0;
+    this.fft = makeFFT(FFT_N);
+    ['E', 'H', 'SE', 'SH'].forEach(k => { this['ref' + k] = el => { this.canvases[k] = el; }; });
+    this.refTime = el => { this.timeEl = el; };
+  }
+  get fMin() { return this.props.fMin ?? 20; }
+  get fMax() { return this.props.fMax ?? 2000; }
+  componentDidMount() {
+    this.ac = new (window.AudioContext || window.webkitAudioContext)();
+    this.gE = this.ac.createGain(); this.gH = this.ac.createGain();
+    this.gE.gain.value = 0; this.gH.gain.value = 0;
+    this.gE.connect(this.ac.destination); this.gH.connect(this.ac.destination);
+    [55, 100, 410].forEach(f => this.load(f));
+    const loop = () => { this.raf = requestAnimationFrame(loop); this.frame(); };
+    loop();
+    this.onKey = e => {
+      if (e.code === 'Space') { e.preventDefault(); this.toggleBoth(); }
+      else if (e.key === 'e') this.toggle('e');
+      else if (e.key === 'h') this.toggle('h');
+      else if (e.key === 'a') this.setState(s => ({ tab: s.tab === 'aep' ? 'signals' : 'aep' }));
+      else if (['1', '2', '3'].includes(e.key)) this.selectFreq([55, 100, 410][+e.key - 1]);
+    };
+    window.addEventListener('keydown', this.onKey);
+    this.resetIdle = () => {
+      clearTimeout(this.idleT);
+      this.idleT = setTimeout(() => {
+        if (this.running) this.setOn(false, false);
+        this.offset = 0;
+        this.setState({ tab: 'aep' });
+      }, (this.props.idleSeconds ?? 60) * 1000);
+    };
+    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(ev => window.addEventListener(ev, this.resetIdle, { passive: true }));
+    this.resetIdle();
+    this.onResize = () => { const n = window.innerWidth < 760; if (n !== this.state.narrow) this.setState({ narrow: n }); };
+    window.addEventListener('resize', this.onResize); this.onResize();
+  }
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf); window.removeEventListener('keydown', this.onKey);
+    clearTimeout(this.idleT); window.removeEventListener('resize', this.onResize); ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(ev => window.removeEventListener(ev, this.resetIdle));
+    this.dead = true; this.stopSources(); this.ac && this.ac.close();
+  }
+  load(f) {
+    return Promise.all(['electro', 'hydro'].map(type => {
+      const key = type + '_' + f;
+      if (this.buffers[key]) return this.buffers[key];
+      return fetch('uploads/' + key + '.wav').then(r => r.arrayBuffer())
+        .then(ab => new Promise((res, rej) => this.ac.decodeAudioData(ab, res, rej)))
+        .then(buf => {
+          const d = buf.getChannelData(0); let pk = 0;
+          for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > pk) pk = a; }
+          this.buffers[key] = buf; this.peaks[key] = pk || 1; return buf;
+        }).catch(err => console.warn('load failed', key, err));
+    }));
+  }
+  get running() { return this.state.eOn || this.state.hOn; }
+  stopSources() { (this.sources || []).forEach(s => { try { s.stop(); } catch (e) {} }); this.sources = null; }
+  start() {
+    const f = this.state.freq;
+    const bE = this.buffers['electro_' + f], bH = this.buffers['hydro_' + f];
+    if (!bE || !bH) { this.load(f).then(() => this.running && !this.sources && this.start()); return; }
+    this.stopSources(); this.ac.resume();
+    const off = this.offset % Math.max(bE.duration, bH.duration);
+    const when = this.ac.currentTime + 0.03;
+    this.sources = [[bE, this.gE], [bH, this.gH]].map(([b, g]) => {
+      const s = this.ac.createBufferSource(); s.buffer = b; s.loop = true;
+      s.connect(g); s.start(when, off % b.duration); return s;
+    });
+    this.startAt = when - off;
+  }
+  curTime() { return this.sources ? Math.max(0, this.ac.currentTime - this.startAt) : this.offset; }
+  applyGains() {
+    const now = this.ac.currentTime;
+    this.gE.gain.setTargetAtTime(this.state.eOn ? 1 : 0, now, 0.02);
+    this.gH.gain.setTargetAtTime(this.state.hOn ? 1 : 0, now, 0.02);
+  }
+  setOn(eOn, hOn) {
+    const was = this.running;
+    this.setState({ eOn, hOn }, () => {
+      this.applyGains();
+      if (!was && this.running) this.start();
+      else if (was && !this.running) { this.offset = this.curTime(); this.stopSources(); }
+    });
+  }
+  toggle(w) { const { eOn, hOn } = this.state; w === 'e' ? this.setOn(!eOn, false) : this.setOn(false, !hOn); }
+  toggleBoth = () => { if (this.running) this.setOn(false, false); else this.setOn(false, true); };
+  selectFreq(f) {
+    if (f === this.state.freq) return;
+    this.stopSources(); this.offset = 0; this.smooth = {};
+    this.setState({ freq: f }, () => { if (this.running) this.start(); });
+  }
+
+  // ---------- drawing ----------
+  prep(k) {
+    const cv = this.canvases[k]; if (!cv) return null;
+    const dpr = window.devicePixelRatio || 1;
+    const W = Math.round(cv.clientWidth * dpr), H = Math.round(cv.clientHeight * dpr);
+    if (!W || !H) return null;
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const c = cv.getContext('2d'); c.fillStyle = BG; c.fillRect(0, 0, W, H);
+    return { c, W, H, dpr };
+  }
+  frame() {
+    const t = this.curTime(), f = this.state.freq;
+    const chans = [['E', 'electro_' + f, '#e49444', !this.state.eOn], ['H', 'hydro_' + f, '#85b6b2', !this.state.hOn]];
+    if (this.state.tab !== 'aep') for (const [k, key, col, dim] of chans) {
+      (this.props.traceMode ?? 'scroll') === 'scroll' ? this.drawWave(k, key, t, col, dim) : this.drawReveal(k, key, t, col, dim);
+      this.drawSpectrum('S' + k, key, t, col, dim);
+    }
+    if (this.timeEl) {
+      const str = String(Math.floor(t / 60)).padStart(2, '0') + ':' + (t % 60).toFixed(2).padStart(5, '0');
+      if (str !== this._lastStr) { this._lastStr = str; this.timeEl.textContent = str; }
+    }
+  }
+  geom(W, dpr) {
+    const winS = (this.props.windowMs ?? 1500) / 1000;
+    const head = W * (this.props.playheadPos ?? 0.85);
+    return { winS, head, pxPerS: head / winS };
+  }
+  playhead(c, head, H, dpr, color, dim) {
+    c.strokeStyle = dim ? '#3a3e44' : color; c.globalAlpha = dim ? 1 : 0.6; c.lineWidth = dpr;
+    c.beginPath(); c.moveTo(Math.round(head) + 0.5, 0); c.lineTo(Math.round(head) + 0.5, H); c.stroke();
+    c.globalAlpha = 1;
+  }
+  drawWave(k, key, t, color, dim) {
+    const g = this.prep(k); if (!g) return;
+    const { c, W, H, dpr } = g, { winS, head, pxPerS } = this.geom(W, dpr);
+    const PT = (this.state.narrow ? 56 : 84) * dpr, PB = H - 40 * dpr, MID = (PT + PB) / 2;
+    if (this.props.showGrid ?? true) {
+      const step = 0.1 * pxPerS, phase = ((t / 0.1) % 1) * step;
+      c.strokeStyle = '#1e2125'; c.lineWidth = 1; c.beginPath();
+      for (let x = head - phase; x > -step; x -= step) { c.moveTo(Math.round(x) + 0.5, 0); c.lineTo(Math.round(x) + 0.5, H); }
+      for (let x = head - phase + step; x < W; x += step) { c.moveTo(Math.round(x) + 0.5, 0); c.lineTo(Math.round(x) + 0.5, H); }
+      for (let i = 0; i <= 4; i++) { const y = Math.round(PT + (PB - PT) * i / 4) + 0.5; c.moveTo(0, y); c.lineTo(W, y); }
+      c.stroke();
+    }
+    c.strokeStyle = '#2c3036'; c.beginPath(); c.moveTo(0, MID + 0.5); c.lineTo(W, MID + 0.5); c.stroke();
+    {
+      c.save();
+      c.fillStyle = '#a9abae'; c.font = `${12 * dpr}px Inter, sans-serif`;
+      c.textAlign = 'center'; c.fillText('Time', head / 2, H - 14 * dpr);
+      c.translate(16 * dpr, MID); c.rotate(-Math.PI / 2); c.fillText('Amplitude', 0, 0);
+      c.restore();
+    }
+    const buf = this.buffers[key];
+    if (buf) {
+      const d = buf.getChannelData(0), n = d.length, sr = buf.sampleRate;
+      const amp = ((PB - PT) * 0.48 * (this.props.vZoom ?? 1)) / this.peaks[key];
+      const at = i => { i = Math.floor(i) % n; if (i < 0) i += n; return d[i]; };
+      const spp = sr / pxPerS, startSample = t * sr - head * spp;
+      c.save();
+      c.globalAlpha = dim ? (this.props.mutedOpacity ?? 0.35) : 1;
+      c.strokeStyle = color; c.lineWidth = 1.6 * dpr; c.lineJoin = 'round';
+      c.beginPath();
+      for (let x = 0; x < head; x++) {
+        const i0 = startSample + x * spp;
+        if (i0 < 0 && t < winS) continue;
+        if (spp <= 1.5) c.lineTo(x, MID - at(i0) * amp);
+        else {
+          let lo = Infinity, hi = -Infinity;
+          for (let i = i0; i < i0 + spp; i++) { const v = at(i); if (v < lo) lo = v; if (v > hi) hi = v; }
+          c.lineTo(x, MID - hi * amp); c.lineTo(x, MID - lo * amp);
+        }
+      }
+      if (!dim) { c.globalAlpha = 0.18; c.lineWidth = 6 * dpr; c.stroke(); c.globalAlpha = 1; c.lineWidth = 1.6 * dpr; }
+      c.stroke(); c.restore();
+    }
+    this.playhead(c, head, H, dpr, color, dim);
+  }
+  envelope(key, buf, pw) {
+    const ck = key + '_' + pw; this.envs = this.envs || {};
+    if (this.envs[ck]) return this.envs[ck];
+    const d = buf.getChannelData(0), n = d.length, lo = new Float32Array(pw), hi = new Float32Array(pw);
+    for (let x = 0; x < pw; x++) {
+      const a = Math.floor(x * n / pw), b = Math.max(a + 1, Math.floor((x + 1) * n / pw));
+      let l = Infinity, u = -Infinity;
+      for (let i = a; i < b && i < n; i++) { const v = d[i]; if (v < l) l = v; if (v > u) u = v; }
+      lo[x] = l; hi[x] = u;
+    }
+    return (this.envs[ck] = { lo, hi });
+  }
+  drawReveal(k, key, t, color, dim) {
+    const g = this.prep(k); if (!g) return;
+    const { c, W, H, dpr } = g;
+    const x0 = Math.round(40 * dpr), x1 = Math.round(W - 24 * dpr), pw = x1 - x0;
+    const PT = (this.state.narrow ? 56 : 84) * dpr, PB = H - 40 * dpr, MID = (PT + PB) / 2;
+    const buf = this.buffers[key];
+    const dur = buf ? buf.duration : 1;
+    const steps = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 30, 60];
+    const st = steps.find(s => dur / s <= 8) || 60, dec = st < 0.1 ? 2 : st < 1 ? (st === 0.25 ? 2 : 1) : 0;
+    if (this.props.showGrid ?? true) {
+      c.strokeStyle = '#1e2125'; c.lineWidth = 1; c.beginPath();
+      for (let ts = 0; ts <= dur + 1e-9; ts += st) { const x = Math.round(x0 + ts / dur * pw) + 0.5; c.moveTo(x, PT); c.lineTo(x, PB); }
+      for (let i = 0; i <= 4; i++) { const y = Math.round(PT + (PB - PT) * i / 4) + 0.5; c.moveTo(x0, y); c.lineTo(x1, y); }
+      c.stroke();
+    }
+    c.strokeStyle = '#2c3036'; c.beginPath(); c.moveTo(x0, MID + 0.5); c.lineTo(x1, MID + 0.5); c.stroke();
+    c.save(); c.font = `${11 * dpr}px Inter, sans-serif`; c.fillStyle = '#8a8d91'; c.textAlign = 'center';
+    c.strokeStyle = '#3a3e44'; c.lineWidth = dpr;
+    if (buf) for (let ts = 0; ts <= dur + 1e-9; ts += st) {
+      const x = x0 + ts / dur * pw;
+      c.beginPath(); c.moveTo(x, H - 40 * dpr); c.lineTo(x, H - 34 * dpr); c.stroke();
+      c.fillText(ts.toFixed(dec), x, H - 22 * dpr);
+    }
+    c.fillStyle = '#a9abae'; c.font = `${12 * dpr}px Inter, sans-serif`;
+    c.fillText('Time (s)', x0 + pw / 2, H - 6 * dpr);
+    c.translate(16 * dpr, MID); c.rotate(-Math.PI / 2); c.fillText('Amplitude', 0, 0);
+    c.restore();
+    if (!buf) return;
+    const tt = t % dur, upto = Math.min(pw, Math.round(tt / dur * pw));
+    const { lo, hi } = this.envelope(key, buf, pw);
+    const amp = ((PB - PT) * 0.48 * (this.props.vZoom ?? 1)) / this.peaks[key];
+    c.save();
+    c.globalAlpha = dim ? (this.props.mutedOpacity ?? 0.35) : 1;
+    c.strokeStyle = color; c.lineWidth = 1.2 * dpr; c.lineJoin = 'round';
+    c.beginPath();
+    for (let x = 0; x < upto; x++) { c.lineTo(x0 + x, MID - hi[x] * amp); c.lineTo(x0 + x, MID - lo[x] * amp); }
+    c.stroke(); c.restore();
+    this.playhead(c, x0 + tt / dur * pw, H - 40 * dpr, dpr, color, dim);
+  }
+  // log-frequency helpers
+  fToUnit(f) { return Math.log(f / this.fMin) / Math.log(this.fMax / this.fMin); }
+  linTicks() { return [50, 100, 200, 500, 1000, 2000, 5000].filter(f => f > this.fMin && f < this.fMax); }
+  unitToF(u) { return this.fMin * Math.pow(this.fMax / this.fMin, u); }
+  freqTicks(c, H, dpr, along, len) {
+    const ticks = this.linTicks();
+    c.font = `${11 * dpr}px Inter, sans-serif`; c.fillStyle = '#8a8d91';
+    for (const f of ticks) {
+      const x = this.fToUnit(f) * len, lab = f >= 1000 ? (f / 1000) + 'k' : String(f);
+      c.fillText(lab, x + 3 * dpr, H - 26 * dpr);
+    }
+    c.textAlign = 'left';
+    return ticks;
+  }
+
+  markers(c, W, top, bot, dpr) {
+    const f = this.state.freq, f2 = f * 2;
+    const x1 = this.fToUnit(f) * W, x2 = this.fToUnit(f2) * W;
+    c.save();
+    c.font = `${11 * dpr}px Inter, sans-serif`;
+    c.setLineDash([4 * dpr, 4 * dpr]); c.strokeStyle = '#e8e6e1'; c.globalAlpha = 0.45; c.lineWidth = dpr;
+    c.beginPath(); c.moveTo(Math.round(x1) + 0.5, top); c.lineTo(Math.round(x1) + 0.5, bot); c.stroke();
+    c.globalAlpha = 0.8; c.fillStyle = '#c9c7c2'; c.textAlign = 'center';
+    c.fillText('f', x1, top - 8 * dpr);
+    c.setLineDash([]);
+    if (x2 < W) {
+      c.globalAlpha = 0.1; c.fillStyle = HARM; c.fillRect(x2 - 7 * dpr, top, 14 * dpr, bot - top);
+      c.globalAlpha = 0.9; c.strokeStyle = HARM; c.lineWidth = 1.5 * dpr;
+      c.beginPath(); c.moveTo(Math.round(x2) + 0.5, top); c.lineTo(Math.round(x2) + 0.5, bot); c.stroke();
+      c.globalAlpha = 1; c.fillStyle = HARM; c.font = `600 ${12 * dpr}px 'Space Grotesk', sans-serif`;
+      c.textAlign = 'center';
+      c.fillText('2f', x2, top - 8 * dpr);
+    }
+    c.restore();
+  }
+  drawSpectrum(k, key, t, color, dim) {
+    const g = this.prep(k); if (!g) return;
+    const { c, W, H, dpr } = g;
+    const top = (this.state.narrow ? 34 : 56) * dpr, bot = H - 44 * dpr, ph = bot - top;
+    c.strokeStyle = '#1e2125'; c.lineWidth = 1; c.beginPath();
+    for (let db = 0; db >= DB_FLOOR; db -= 20) { const y = Math.round(top + ph * (db / DB_FLOOR)) + 0.5; c.moveTo(0, y); c.lineTo(W, y); }
+    const ticks = this.linTicks();
+    for (const f of ticks) { const x = Math.round(this.fToUnit(f) * W) + 0.5; c.moveTo(x, top); c.lineTo(x, bot); }
+    c.stroke();
+    this.freqTicks(c, H, dpr, 'x', W);
+    this.markers(c, W, top, bot, dpr);
+    c.save(); c.font = `${12 * dpr}px Inter, sans-serif`; c.fillStyle = '#a9abae'; c.textAlign = 'center';
+    c.fillText('Frequency (Hz)', W / 2, H - 8 * dpr); c.restore();
+    const buf = this.buffers[key]; if (!buf) return;
+    const d = buf.getChannelData(0), n = d.length, sr = buf.sampleRate;
+    const end = Math.floor(t * sr);
+    const mag = this.fft(i => { let j = (end - FFT_N + i) % n; if (j < 0) j += n; return d[j]; });
+    const ref = this.peaks[key] * FFT_N / 4, binHz = sr / FFT_N;
+    let sm = this.smooth[key]; if (!sm || sm.length !== W) sm = this.smooth[key] = new Float32Array(W).fill(DB_FLOOR);
+    c.save();
+    c.globalAlpha = dim ? (this.props.mutedOpacity ?? 0.35) : 1;
+    c.beginPath(); c.moveTo(0, bot);
+    for (let x = 0; x < W; x++) {
+      const b = this.unitToF(x / W) / binHz, b0 = Math.floor(b), fr = b - b0;
+      const m = (mag[b0] || 0) * (1 - fr) + (mag[b0 + 1] || 0) * fr;
+      const db = Math.max(DB_FLOOR, 20 * Math.log10(m / ref + 1e-12));
+      sm[x] = sm[x] * 0.6 + db * 0.4;
+      c.lineTo(x, top + ph * Math.min(1, sm[x] / DB_FLOOR));
+    }
+    c.lineTo(W, bot); c.closePath();
+    c.fillStyle = color; const a = c.globalAlpha; c.globalAlpha = a * 0.15; c.fill(); c.globalAlpha = a;
+    c.strokeStyle = color; c.lineWidth = 1.5 * dpr; c.stroke();
+    c.restore();
+  }
+  renderVals() {
+    const { freq, eOn, hOn, tab, narrow: N } = this.state;
+    const L = N ? {
+      rootCols: '100%', rootRows: 'auto minmax(0,1fr)', sidePad: '10px 12px', sideGap: '0', sideBR: 'none', sideBB: '1px solid #24272b',
+      groupsGap: '8px', groupDir: 'row', itemGap: '6px', labelDisp: 'none', timeDisp: 'none', freqDisp: tab === 'signals' ? 'flex' : 'none',
+      rowCols: 'minmax(0,1fr)', rowRows: 'minmax(0,3fr) minmax(0,2fr)', hdrTop: '10px', hdrSide: '12px', titleSize: '14px', iconSize: '20px',
+      btnH: '36px', btnPad: '0 12px', specLabTop: '10px', aepJustify: 'flex-start', aepGap: '18px', aepPad: '20px 18px 28px', aepOverflow: 'auto',
+      h1Size: '26px', pSize: '22px', cardPad: '10px', cardFlex: 'none',
+    } : {
+      rootCols: '232px minmax(0,1fr)', rootRows: 'minmax(0,1fr)', sidePad: '36px 24px', sideGap: '24px', sideBR: '1px solid #24272b', sideBB: 'none',
+      groupsGap: '28px', groupDir: 'column', itemGap: '10px', labelDisp: 'block', timeDisp: 'flex', freqDisp: 'flex',
+      rowCols: 'minmax(0,1fr) 300px', rowRows: 'minmax(0,1fr)', hdrTop: '24px', hdrSide: '28px', titleSize: '17.6px', iconSize: '28px',
+      btnH: '44px', btnPad: '0 20px', specLabTop: '24px', aepJustify: 'center', aepGap: '28px', aepPad: '40px', aepOverflow: 'hidden',
+      h1Size: '40.8px', pSize: '34px', cardPad: '24px', cardFlex: '0 1 auto',
+    };
+    const item = N ? { flex: '1', justify: 'center' } : { flex: 'none', justify: 'flex-start' };
+    const both = eOn && hOn;
+    return {
+      L,
+      tabs: [['aep', '1. Method'], ['signals', '2. Signals']].map(([id, label]) => ({ label, select: () => this.setState({ tab: id }), ...item, pad: N ? '10px 12px' : '12px 18px', size: N ? '15px' : '18px',
+        bg: tab === id ? '#33373d' : 'transparent', fg: tab === id ? '#f2f0eb' : '#a9abae', border: tab === id ? '#4a4f56' : '#2c3036' })),
+      sigDisplay: tab === 'signals' ? 'grid' : 'none', aepDisplay: tab === 'aep' ? 'flex' : 'none',
+      freqs: [55, 100, 410].map(f => ({ hz: f, select: () => this.selectFreq(f), ...item, pad: N ? '6px 10px' : '16px 18px', size: N ? '22px' : '40px',
+        bg: f === freq ? '#33373d' : 'transparent', fg: f === freq ? '#f2f0eb' : '#a9abae',
+        border: f === freq ? '#4a4f56' : '#2c3036' })),
+      toggleBoth: this.toggleBoth,
+      bothLabel: both ? 'PAUSE BOTH' : 'PLAY BOTH',
+      bothBg: both ? '#33373d' : 'transparent', bothFg: both ? '#f2f0eb' : '#c9c7c2',
+      toggleE: () => this.toggle('e'), toggleH: () => this.toggle('h'),
+      eLabel: eOn ? 'PAUSE' : 'PLAY', hLabel: hOn ? 'PAUSE' : 'PLAY',
+      eIcon: eOn ? '❚❚' : '▶', hIcon: hOn ? '❚❚' : '▶',
+      eBg: eOn ? '#e49444' : 'transparent', eFg: eOn ? '#111315' : '#e49444',
+      hBg: hOn ? '#85b6b2' : 'transparent', hFg: hOn ? '#111315' : '#85b6b2',
+      refE: this.refE, refH: this.refH, refSE: this.refSE, refSH: this.refSH, refTime: this.refTime,
+    };
+  }
+}
+</script>
+</body>
+</html>
