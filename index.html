@@ -47,7 +47,7 @@ button{font:inherit;}
         <div style="position:absolute;top:{{ L.hdrTop }};left:{{ L.hdrSide }};right:{{ L.hdrSide }};display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div style="display:flex;align-items:center;gap:10px;pointer-events:none;min-width:0;">
             <div role="img" aria-label="speaker" style="flex:none;width:{{ L.iconSize }};height:{{ L.iconSize }};background:#85b6b2;-webkit-mask:url(uploads/speaker-filled-audio-tool.png) center/contain no-repeat;mask:url(uploads/speaker-filled-audio-tool.png) center/contain no-repeat;"></div>
-            <span style="font-size:{{ L.titleSize }};font-weight:600;color:#85b6b2;white-space:nowrap;">Underwater speaker signal</span>
+            <span style="font-size:{{ L.titleSize }};font-weight:600;color:#85b6b2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">Underwater speaker signal</span>
           </div>
           <button onClick="{{ toggleH }}" style="flex:none;display:flex;align-items:center;gap:8px;height:{{ L.btnH }};padding:{{ L.btnPad }};border-radius:99px;border:1px solid #85b6b2;background:{{ hBg }};color:{{ hFg }};cursor:pointer;font-size:14px;font-weight:600;letter-spacing:0.08em;white-space:nowrap;"><span>{{ hIcon }}</span><span>{{ hLabel }}</span></button>
         </div>
@@ -63,7 +63,7 @@ button{font:inherit;}
         <div style="position:absolute;top:{{ L.hdrTop }};left:{{ L.hdrSide }};right:{{ L.hdrSide }};display:flex;justify-content:space-between;align-items:center;gap:8px;">
           <div style="display:flex;align-items:center;gap:10px;pointer-events:none;min-width:0;">
             <div role="img" aria-label="fish brain" style="flex:none;width:{{ L.iconSize }};height:{{ L.iconSize }};background:#e49444;-webkit-mask:url(uploads/fish.png) center/contain no-repeat;mask:url(uploads/fish.png) center/contain no-repeat;"></div>
-            <span style="font-size:{{ L.titleSize }};font-weight:600;color:#e49444;white-space:nowrap;">Fish neural signal</span>
+            <span style="font-size:{{ L.titleSize }};font-weight:600;color:#e49444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">Fish neural signal</span>
           </div>
           <button onClick="{{ toggleE }}" style="flex:none;display:flex;align-items:center;gap:8px;height:{{ L.btnH }};padding:{{ L.btnPad }};border-radius:99px;border:1px solid #e49444;background:{{ eBg }};color:{{ eFg }};cursor:pointer;font-size:14px;font-weight:600;letter-spacing:0.08em;white-space:nowrap;"><span>{{ eIcon }}</span><span>{{ eLabel }}</span></button>
         </div>
@@ -105,7 +105,7 @@ function makeFFT(N) {
         re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
       }
     }
-    for (let i = 0; i < N / 2; i++) mag[i] = Math.hypot(re[i], im[i]);
+    for (let i = 0; i < N / 2; i++) mag[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]);
     return mag;
   };
 }
@@ -191,7 +191,18 @@ class Component extends DCLogic {
     this.gE.gain.setTargetAtTime(this.state.eOn ? 1 : 0, now, 0.02);
     this.gH.gain.setTargetAtTime(this.state.hOn ? 1 : 0, now, 0.02);
   }
+  unlockAudio() {
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = 'playback';
+      if (this.ac.state !== 'running') this.ac.resume();
+      if (!this._unlocked) {
+        const b = this.ac.createBuffer(1, 1, 22050), s = this.ac.createBufferSource();
+        s.buffer = b; s.connect(this.ac.destination); s.start(0); this._unlocked = true;
+      }
+    } catch (e) {}
+  }
   setOn(eOn, hOn) {
+    if (eOn || hOn) this.unlockAudio();
     const was = this.running;
     this.setState({ eOn, hOn }, () => {
       this.applyGains();
@@ -210,7 +221,7 @@ class Component extends DCLogic {
   // ---------- drawing ----------
   prep(k) {
     const cv = this.canvases[k]; if (!cv) return null;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
     const W = Math.round(cv.clientWidth * dpr), H = Math.round(cv.clientHeight * dpr);
     if (!W || !H) return null;
     if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
@@ -252,13 +263,6 @@ class Component extends DCLogic {
       c.stroke();
     }
     c.strokeStyle = '#2c3036'; c.beginPath(); c.moveTo(0, MID + 0.5); c.lineTo(W, MID + 0.5); c.stroke();
-    {
-      c.save();
-      c.fillStyle = '#a9abae'; c.font = `${12 * dpr}px Inter, sans-serif`;
-      c.textAlign = 'center'; c.fillText('Time', head / 2, H - 14 * dpr);
-      c.translate(16 * dpr, MID); c.rotate(-Math.PI / 2); c.fillText('Amplitude', 0, 0);
-      c.restore();
-    }
     const buf = this.buffers[key];
     if (buf) {
       const d = buf.getChannelData(0), n = d.length, sr = buf.sampleRate;
@@ -267,20 +271,39 @@ class Component extends DCLogic {
       const spp = sr / pxPerS, startSample = t * sr - head * spp;
       c.save();
       c.globalAlpha = dim ? (this.props.mutedOpacity ?? 0.35) : 1;
-      c.strokeStyle = color; c.lineWidth = 1.6 * dpr; c.lineJoin = 'round';
-      c.beginPath();
-      for (let x = 0; x < head; x++) {
-        const i0 = startSample + x * spp;
-        if (i0 < 0 && t < winS) continue;
-        if (spp <= 1.5) c.lineTo(x, MID - at(i0) * amp);
-        else {
+      const x0 = (t < winS) ? Math.max(0, Math.ceil(-startSample / spp)) : 0, x1 = Math.floor(head);
+      if (spp <= 1.5) {
+        c.strokeStyle = color; c.lineWidth = 1.6 * dpr; c.lineJoin = 'round';
+        c.beginPath();
+        for (let x = x0; x < x1; x++) c.lineTo(x, MID - at(startSample + x * spp) * amp);
+        c.stroke();
+      } else {
+        // min/max envelope per pixel column, drawn as one filled band (much cheaper than a zig-zag stroke)
+        const n2 = x1 - x0; if (!this._top || this._top.length < n2) { this._top = new Float32Array(n2 + 64); this._bot = new Float32Array(n2 + 64); }
+        const T = this._top, B = this._bot, minH = 0.8 * dpr;
+        let i = Math.floor(startSample + x0 * spp); i = ((i % n) + n) % n;
+        for (let x = x0, j = 0; x < x1; x++, j++) {
+          const end = Math.floor(startSample + (x + 1) * spp) - Math.floor(startSample + x * spp);
           let lo = Infinity, hi = -Infinity;
-          for (let i = i0; i < i0 + spp; i++) { const v = at(i); if (v < lo) lo = v; if (v > hi) hi = v; }
-          c.lineTo(x, MID - hi * amp); c.lineTo(x, MID - lo * amp);
+          for (let s = 0; s < end; s++) { const v = d[i]; if (v < lo) lo = v; if (v > hi) hi = v; if (++i >= n) i = 0; }
+          if (lo === Infinity) { lo = hi = d[i]; }
+          let yt = MID - hi * amp, yb = MID - lo * amp;
+          if (yb - yt < minH) { const m = (yt + yb) / 2; yt = m - minH; yb = m + minH; }
+          T[j] = yt; B[j] = yb;
         }
+        c.fillStyle = color; c.beginPath(); c.moveTo(x0, T[0]);
+        for (let j = 1; j < n2; j++) c.lineTo(x0 + j, T[j]);
+        for (let j = n2 - 1; j >= 0; j--) c.lineTo(x0 + j + 1, B[j]);
+        c.closePath(); c.fill();
       }
-      if (!dim) { c.globalAlpha = 0.18; c.lineWidth = 6 * dpr; c.stroke(); c.globalAlpha = 1; c.lineWidth = 1.6 * dpr; }
-      c.stroke(); c.restore();
+      c.restore();
+    }
+    {
+      c.save(); c.fillStyle = BG; c.globalAlpha = 0.75; c.fillRect(6 * dpr, MID - 40 * dpr, 16 * dpr, 80 * dpr); c.globalAlpha = 1;
+      c.fillStyle = '#a9abae'; c.font = `${12 * dpr}px Inter, sans-serif`;
+      c.textAlign = 'center'; c.fillText('Time', head / 2, H - 14 * dpr);
+      c.translate(16 * dpr, MID); c.rotate(-Math.PI / 2); c.fillText('Amplitude', 0, 0);
+      c.restore();
     }
     this.playhead(c, head, H, dpr, color, dim);
   }
@@ -415,7 +438,7 @@ class Component extends DCLogic {
     } : {
       rootCols: '232px minmax(0,1fr)', rootRows: 'minmax(0,1fr)', sidePad: '36px 24px', sideGap: '24px', sideBR: '1px solid #24272b', sideBB: 'none',
       groupsGap: '28px', groupDir: 'column', itemGap: '10px', labelDisp: 'block', timeDisp: 'flex', freqDisp: 'flex',
-      rowCols: 'minmax(0,1fr) 300px', rowRows: 'minmax(0,1fr)', hdrTop: '24px', hdrSide: '28px', titleSize: '17.6px', iconSize: '28px',
+      rowCols: 'minmax(0,1fr) minmax(220px, 26%)', rowRows: 'minmax(0,1fr)', hdrTop: '24px', hdrSide: '28px', titleSize: '17.6px', iconSize: '28px',
       btnH: '44px', btnPad: '0 20px', specLabTop: '24px', aepJustify: 'center', aepGap: '28px', aepPad: '40px', aepOverflow: 'hidden',
       h1Size: '40.8px', pSize: '34px', cardPad: '24px', cardFlex: '0 1 auto',
     };
