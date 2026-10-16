@@ -14,6 +14,8 @@
 html,body{margin:0;height:100%;background:#111315;font-family:'Space Grotesk',Helvetica,sans-serif;overflow:hidden;}
 a{color:#85b6b2;}a:hover{color:#e49444;}
 button{font:inherit;}
+@keyframes ehDraw{0%{stroke-dashoffset:1;opacity:1}40%{stroke-dashoffset:0;opacity:1}85%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes ehRipple{0%{transform:scale(70);opacity:0}12%{opacity:1}100%{transform:scale(330);opacity:0}}
 </style>
 </helmet>
 <div style="height:100dvh;display:grid;grid-template-columns:{{ L.rootCols }};grid-template-rows:{{ L.rootRows }};background:#111315;color:#e8e6e1;">
@@ -76,7 +78,17 @@ button{font:inherit;}
   <div style="position:absolute;inset:0;display:{{ aepDisplay }};flex-direction:column;align-items:center;justify-content:{{ L.aepJustify }};gap:{{ L.aepGap }};padding:{{ L.aepPad }};box-sizing:border-box;overflow-y:{{ L.aepOverflow }};">
     <h1 style="margin:0;max-width:1400px;width:100%;text-wrap:pretty;font-family:'Space Grotesk',sans-serif;font-size:{{ L.h1Size }};font-weight:600;line-height:1.2;color:#e8e6e1;">I measure the <span style="color:#e49444;">neural activity</span> of fish while they listen to <span style="color:#85b6b2;">sounds</span>.</h1>
     <div style="width:100%;max-width:1400px;aspect-ratio:2.12;min-height:0;flex:{{ L.cardFlex }};overflow:hidden;background:#ffffff;border-radius:14px;padding:{{ L.cardPad }};box-sizing:border-box;display:flex;">
-      <img src="uploads/aepdiagram_edited.png" alt="Auditory Evoked Potentials (AEP): present sound stimulus, record elicited response from electrodes, measure AEP" style="display:block;width:100%;min-width:0;min-height:0;object-fit:contain;">
+      <div style="position:relative;flex:1;min-width:0;min-height:0;">
+        <img src="uploads/aepdiagram_norays.png" alt="Auditory Evoked Potentials (AEP): present sound stimulus, record elicited response from electrodes, measure AEP" style="position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;">
+        <svg viewBox="0 0 2560 1246" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;">
+          <g transform="translate(612 668)">
+            <path d="M0.766 -0.643 A1 1 0 0 1 0.766 0.643" fill="none" stroke="#85b6b2" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke" style="transform-origin:0 0;animation:ehRipple 2.4s ease-out infinite;"></path>
+            <path d="M0.766 -0.643 A1 1 0 0 1 0.766 0.643" fill="none" stroke="#85b6b2" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke" style="transform-origin:0 0;opacity:0;animation:ehRipple 2.4s ease-out -0.8s infinite;"></path>
+            <path d="M0.766 -0.643 A1 1 0 0 1 0.766 0.643" fill="none" stroke="#85b6b2" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke" style="transform-origin:0 0;opacity:0;animation:ehRipple 2.4s ease-out -1.6s infinite;"></path>
+          </g>
+          <polyline points="1922,725 1935,700 1952,724 2000,699 2042,720 2057,683 2070,725 2100,582 2117,565 2157,709 2173,714 2187,724 2202,701 2237,734 2252,727 2280,739" pathLength="1" fill="none" stroke="#283b91" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" style="stroke-dasharray:1;stroke-dashoffset:1;animation:ehDraw 3.2s ease-in-out infinite;"></polyline>
+        </svg>
+      </div>
     </div>
     <p style="margin:0;max-width:1400px;width:100%;font-family:'Space Grotesk',sans-serif;font-size:{{ L.pSize }};font-weight:600;line-height:1.2;color:#e8e6e1;text-wrap:pretty;">I have "sonified" these neural signals. Click on the signals tab to listen...</p>
   </div>
